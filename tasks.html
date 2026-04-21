@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>事务清单 - 家庭管理中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F8F6F1; --surface: #FFFFFF; --surface-2: #F2EFE9;
+      --primary: #2D5A4A; --primary-light: #3D7A64; --primary-dark: #1E3D32;
+      --accent: #E07B39; --accent-light: #F4A574;
+      --text: #1A1A18; --text-2: #5C5C58; --text-3: #9A9A96;
+      --border: #E5E2DC; --shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+      --radius: 16px; --radius-sm: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
+    a { text-decoration: none; }
+
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: var(--primary); display: flex; flex-direction: column; padding: 32px 0; z-index: 100; }
+    .sidebar-logo { padding: 0 28px 32px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+    .sidebar-logo h1 { color: #fff; font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+    .sidebar-logo span { color: var(--accent-light); font-family: 'Noto Sans SC', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; display: block; margin-top: 4px; }
+    .sidebar-nav { flex: 1; padding: 20px 0; overflow-y: auto; }
+    .nav-section { padding: 12px 28px 8px; font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.35); text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 13px 28px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; transition: all 0.2s; cursor: pointer; position: relative; }
+    .nav-item:hover, .nav-item.active { color: #fff; background: rgba(255,255,255,0.08); }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 24px; background: var(--accent); border-radius: 0 4px 4px 0; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 0 28px; border-top: 1px solid rgba(255,255,255,0.12); }
+    .family-avatar { display: flex; align-items: center; gap: 12px; padding: 16px 0; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #fff; font-family: 'Cormorant Garamond', serif; }
+    .family-info .name { color: #fff; font-size: 14px; font-weight: 500; }
+    .family-info .role { color: rgba(255,255,255,0.45); font-size: 11px; }
+
+    .main { margin-left: 240px; min-height: 100vh; padding: 36px 48px; }
+    .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; animation: fadeUp 0.5s ease both; }
+    .page-title { font-size: 42px; font-weight: 600; color: var(--text); line-height: 1; }
+    .page-title small { display: block; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; font-weight: 400; color: var(--text-3); letter-spacing: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn { padding: 10px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; font-family: 'Noto Sans SC', sans-serif; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface-2); }
+
+    /* Tab Bar */
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 28px; animation: fadeUp 0.5s ease both; }
+    .tab { padding: 9px 20px; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-2); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; font-weight: 400; font-family: 'Noto Sans SC', sans-serif; background: transparent; }
+    .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: var(--shadow); border-color: var(--border); }
+    .tab:hover:not(.active) { color: var(--text); background: var(--surface-2); }
+    .tab .count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 11px; background: var(--surface-2); color: var(--text-3); margin-left: 6px; }
+    .tab.active .count { background: var(--primary); color: #fff; }
+
+    /* Layout */
+    .task-layout { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+    .card { background: var(--surface); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); animation: fadeUp 0.5s ease both; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .card-title { font-size: 18px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .card-title svg { width: 18px; height: 18px; color: var(--primary); }
+
+    /* Task Item */
+    .task-list { }
+    .task-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); transition: all 0.2s; }
+    .task-item:last-child { border-bottom: none; }
+    .task-item:hover { padding-left: 6px; }
+    .task-check { width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 50%; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-top: 1px; }
+    .task-check:hover { border-color: var(--primary); background: rgba(45,90,74,0.08); }
+    .task-check.done { background: var(--primary); border-color: var(--primary); }
+    .task-check.done::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+    .task-body { flex: 1; }
+    .task-title { font-size: 15px; color: var(--text); font-weight: 400; line-height: 1.4; }
+    .task-title.done { text-decoration: line-through; color: var(--text-3); }
+    .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .task-meta span { font-size: 11px; color: var(--text-3); display: flex; align-items: center; gap: 3px; }
+    .tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+    .tag.shopping { background: #FFF3E0; color: var(--accent); }
+    .tag.bill { background: #E8F5E9; color: var(--primary); }
+    .tag.todo { background: #E3F2FD; color: #1565C0; }
+    .tag.repair { background: #F3E5F5; color: #7B6EA0; }
+    .tag.urgent { background: #FFEBEE; color: #D94F4F; }
+    .tag.done { background: var(--surface-2); color: var(--text-3); }
+
+    .task-priority { width: 4px; height: 40px; border-radius: 2px; flex-shrink: 0; }
+    .priority-high { background: #D94F4F; }
+    .priority-med { background: var(--accent); }
+    .priority-low { background: var(--text-3); }
+
+    .task-assignee { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; font-family: 'Cormorant Garamond', serif; flex-shrink: 0; }
+
+    /* Progress Bar */
+    .section-progress { margin-bottom: 20px; }
+    .section-progress-label { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .section-progress-label span { font-size: 12px; color: var(--text-3); }
+    .section-progress-label strong { font-size: 13px; color: var(--text); }
+    .progress-bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 4px; transition: width 0.6s ease; }
+
+    /* Rule Card */
+    .rule-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .rule-item:last-child { border-bottom: none; }
+    .rule-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .rule-info { flex: 1; }
+    .rule-name { font-size: 14px; color: var(--text); font-weight: 500; }
+    .rule-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .rule-cycle { font-size: 11px; padding: 2px 8px; background: var(--surface-2); border-radius: 20px; color: var(--text-2); }
+
+    /* Summary Stats */
+    .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .summary-item { background: var(--surface-2); border-radius: var(--radius-sm); padding: 16px; text-align: center; }
+    .summary-val { font-size: 28px; font-weight: 700; font-family: 'Cormorant Garamond', serif; color: var(--text); }
+    .summary-val.danger { color: #D94F4F; }
+    .summary-val.ok { color: var(--primary); }
+    .summary-lbl { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .delay-1 { animation-delay: 0.08s; } .delay-2 { animation-delay: 0.16s; } .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; } .delay-5 { animation-delay: 0.40s; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><h1>家的空间</h1><span>Family Hub</span></div>
+  <div class="sidebar-nav">
+    <div class="nav-section">概览</div>
+    <a class="nav-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>仪表盘</a>
+    <div class="nav-section">财务</div>
+    <a class="nav-item" href="finance-accounts.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>账户</a>
+    <a class="nav-item" href="finance-ledger.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>记账</a>
+    <a class="nav-item" href="finance-budget.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>预算</a>
+    <a class="nav-item" href="finance-report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>报表</a>
+    <div class="nav-section">行程</div>
+    <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>日历</a>
+    <a class="nav-item" href="bulletin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>公告板</a>
+    <div class="nav-section">事务</div>
+    <a class="nav-item active" href="tasks.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>事务清单</a>
+    <a class="nav-item" href="shopping.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg>购物清单</a>
+    <a class="nav-item" href="inventory.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>物资库存</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="family-avatar"><div class="avatar">李</div><div class="family-info"><div class="name">李明家</div><div class="role">家长 · 4人</div></div></div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">事务清单<small>本周待办 12项 · 逾期 2项</small></div>
+    <div class="header-actions">
+      <button class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        导出
+      </button>
+      <button class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新建任务
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="summary-row delay-1">
+    <div class="summary-item"><div class="summary-val">12</div><div class="summary-lbl">待完成</div></div>
+    <div class="summary-item"><div class="summary-val danger">2</div><div class="summary-lbl">已逾期</div></div>
+    <div class="summary-item"><div class="summary-val ok">8</div><div class="summary-lbl">已完成</div></div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar delay-1">
+    <button class="tab active">全部 <span class="count">20</span></button>
+    <button class="tab">待办 <span class="count">7</span></button>
+    <button class="tab">账单缴费 <span class="count">3</span></button>
+    <button class="tab">购物 <span class="count">4</span></button>
+    <button class="tab">维修 <span class="count">2</span></button>
+    <button class="tab">已完成 <span class="count">8</span></button>
+  </div>
+
+  <div class="task-layout">
+
+    <!-- Task List -->
+    <div>
+      <!-- Urgent Section -->
+      <div class="card delay-1" style="margin-bottom:24px; border-left: 4px solid #D94F4F;">
+        <div class="card-header">
+          <div class="card-title" style="color:#D94F4F;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#D94F4F;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            逾期事项
+          </div>
+          <span style="font-size:12px; color:#D94F4F; font-weight:500;">2项需要立即处理</span>
+        </div>
+        <div class="task-list">
+          <div class="task-item">
+            <div class="task-priority priority-high"></div>
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-title">补缴上月水费（逾期7天）</div>
+              <div class="task-meta">
+                <span class="tag bill">账单缴费</span>
+                <span>💰 ¥86.50</span>
+                <span>📅 4月8日到期</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#E07B39;">王</div>
+          </div>
+          <div class="task-item">
+            <div class="task-priority priority-high"></div>
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-title">提交子轩学校材料（逾期3天）</div>
+              <div class="task-meta">
+                <span class="tag todo">待办</span>
+                <span>📅 4月12日到期</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#2D5A4A;">李</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Normal Tasks -->
+      <div class="card delay-2">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/></svg>
+            待完成事项
+          </div>
+          <button class="btn btn-ghost" style="padding:6px 12px; font-size:12px;">+ 添加</button>
+        </div>
+
+        <div class="task-list">
+          <div class="task-item">
+            <div class="task-priority priority-high"></div>
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-title">缴纳4月电费</div>
+              <div class="task-meta">
+                <span class="tag bill">账单缴费</span>
+                <span>💰 ¥386</span>
+                <span>📅 4月20日到期</span>
+                <span>⏰ 提前3天提醒</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#E07B39;">王</div>
+          </div>
+          <div class="task-item">
+            <div class="task-priority priority-med"></div>
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-title">预约空调深度清洗</div>
+              <div class="task-meta">
+                <span class="tag repair">维修</span>
+                <span>📅 4月底前</span>
+                <span>💡 每年春季建议清洗</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#2D5A4A;">李</div>
+          </div>
+          <div class="task-item">
+            <div class="task-priority priority-med"></div>
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-title">购买大米 5kg + 食用油</div>
+              <div class="task-meta">
+                <span class="tag shopping">购物</span>
+                <span>📅 尽快购买</span>
+                <span>🤖 智能推荐 · 库存将尽</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#3A8FA0;">李</div>
+          </div>
+          <div class="task-item">
+            <div class="task-priority priority-low"></div>
+            <div class="task-check"></div>
+            <div class="task-body">
+              <div class="task-title">整理换季衣物</div>
+              <div class="task-meta">
+                <span class="tag todo">待办</span>
+                <span>📅 本周内</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#E07B39;">王</div>
+          </div>
+          <div class="task-item">
+            <div class="task-priority priority-low"></div>
+            <div class="task-check done"></div>
+            <div class="task-body">
+              <div class="task-title done">预约子轩眼科复查</div>
+              <div class="task-meta">
+                <span class="tag done">已完成</span>
+                <span>✅ 4月10日 王芳</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#E07B39;">王</div>
+          </div>
+          <div class="task-item">
+            <div class="task-priority priority-low"></div>
+            <div class="task-check done"></div>
+            <div class="task-body">
+              <div class="task-title done">汽车年检续保</div>
+              <div class="task-meta">
+                <span class="tag done">已完成</span>
+                <span>✅ 4月5日 李明</span>
+              </div>
+            </div>
+            <div class="task-assignee" style="background:#2D5A4A;">李</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="events-sidebar">
+
+      <!-- Cycle Reminders -->
+      <div class="card delay-2">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            周期提醒规则
+          </div>
+          <button class="btn btn-ghost" style="padding:5px 10px; font-size:11px;">+ 规则</button>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon" style="background:#FFF3E0;">💡</div>
+          <div class="rule-info"><div class="rule-name">电费</div><div class="rule-meta">提前3天提醒 · 到期日每月20日</div></div>
+          <span class="rule-cycle">每月</span>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon" style="background:#E3F2FD;">📺</div>
+          <div class="rule-info"><div class="rule-name">宽带费</div><div class="rule-meta">提前5天提醒 · 到期日每月25日</div></div>
+          <span class="rule-cycle">每月</span>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon" style="background:#E8F5E9;">🥛</div>
+          <div class="rule-info"><div class="rule-name">鲜奶配送</div><div class="rule-meta">自动续费 · 每月5日</div></div>
+          <span class="rule-cycle">每月</span>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon" style="background:#FFF3E0;">❄️</div>
+          <div class="rule-info"><div class="rule-name">空调滤网清洁</div><div class="rule-meta">每6个月提醒一次</div></div>
+          <span class="rule-cycle">半年</span>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon" style="background:#F3E5F5;">🚗</div>
+          <div class="rule-info"><div class="rule-name">汽车保养</div><div class="rule-meta">每6个月或5000公里</div></div>
+          <span class="rule-cycle">半年</span>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon" style="background:#E8F5E9;">🎂</div>
+          <div class="rule-info"><div class="rule-name">李子轩生日</div><div class="rule-meta">提前7天提醒</div></div>
+          <span class="rule-cycle">每年</span>
+        </div>
+      </div>
+
+      <!-- Completion Progress -->
+      <div class="card delay-3">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            本周完成率
+          </div>
+        </div>
+        <div class="section-progress">
+          <div class="section-progress-label"><span>已完成</span><strong>8 / 20</strong></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+        </div>
+        <div style="font-size:12px; color:var(--text-3); text-align:center;">目标：本周完成15项，剩余7项</div>
+      </div>
+
+      <!-- Assignee Legend -->
+      <div class="card delay-4">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            责任人
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="task-assignee" style="background:#2D5A4A; width:28px; height:28px;">李</div>
+          <div class="rule-info"><div class="rule-name">李明</div><div class="rule-meta">4项任务待完成</div></div>
+        </div>
+        <div class="rule-item">
+          <div class="task-assignee" style="background:#E07B39; width:28px; height:28px;">王</div>
+          <div class="rule-info"><div class="rule-name">王芳</div><div class="rule-meta">6项任务待完成</div></div>
+        </div>
+        <div class="rule-item">
+          <div class="task-assignee" style="background:#3A8FA0; width:28px; height:28px;">李</div>
+          <div class="rule-info"><div class="rule-name">李子轩</div><div class="rule-meta">1项任务待完成</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>购物清单 - 家庭管理中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F8F6F1; --surface: #FFFFFF; --surface-2: #F2EFE9;
+      --primary: #2D5A4A; --primary-light: #3D7A64; --primary-dark: #1E3D32;
+      --accent: #E07B39; --accent-light: #F4A574;
+      --text: #1A1A18; --text-2: #5C5C58; --text-3: #9A9A96;
+      --border: #E5E2DC; --shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+      --radius: 16px; --radius-sm: 10px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
+    a { text-decoration: none; }
+
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: var(--primary); display: flex; flex-direction: column; padding: 32px 0; z-index: 100; }
+    .sidebar-logo { padding: 0 28px 32px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+    .sidebar-logo h1 { color: #fff; font-size: 22px; font-weight: 600; letter-spacing: 1px; }
+    .sidebar-logo span { color: var(--accent-light); font-family: 'Noto Sans SC', sans-serif; font-size: 11px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; display: block; margin-top: 4px; }
+    .sidebar-nav { flex: 1; padding: 20px 0; overflow-y: auto; }
+    .nav-section { padding: 12px 28px 8px; font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.35); text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 13px 28px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 14px; transition: all 0.2s; cursor: pointer; position: relative; }
+    .nav-item:hover, .nav-item.active { color: #fff; background: rgba(255,255,255,0.08); }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 24px; background: var(--accent); border-radius: 0 4px 4px 0; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 0 28px; border-top: 1px solid rgba(255,255,255,0.12); }
+    .family-avatar { display: flex; align-items: center; gap: 12px; padding: 16px 0; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #fff; font-family: 'Cormorant Garamond', serif; }
+    .family-info .name { color: #fff; font-size: 14px; font-weight: 500; }
+    .family-info .role { color: rgba(255,255,255,0.45); font-size: 11px; }
+
+    .main { margin-left: 240px; min-height: 100vh; padding: 36px 48px; }
+    .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; animation: fadeUp 0.5s ease both; }
+    .page-title { font-size: 42px; font-weight: 600; color: var(--text); line-height: 1; }
+    .page-title small { display: block; font-family: 'Noto Sans SC', sans-serif; font-size: 13px; font-weight: 400; color: var(--text-3); letter-spacing: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn { padding: 10px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; font-family: 'Noto Sans SC', sans-serif; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface-2); }
+
+    .shopping-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+    .card { background: var(--surface); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); animation: fadeUp 0.5s ease both; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .card-title { font-size: 18px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .card-title svg { width: 18px; height: 18px; color: var(--primary); }
+
+    /* Shopping List */
+    .shop-group { margin-bottom: 24px; }
+    .shop-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .shop-group-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .shop-group-title .emoji { font-size: 16px; }
+    .shop-group-meta { font-size: 11px; color: var(--text-3); }
+    .shop-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); transition: all 0.2s; }
+    .shop-item:last-child { border-bottom: none; }
+    .shop-item:hover { padding-left: 6px; }
+    .shop-item.checked { opacity: 0.5; }
+    .shop-item.checked .shop-name { text-decoration: line-through; color: var(--text-3); }
+    .shop-check { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 50%; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .shop-check:hover { border-color: var(--primary); background: rgba(45,90,74,0.08); }
+    .shop-check.done { background: var(--primary); border-color: var(--primary); }
+    .shop-check.done::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 700; }
+    .shop-name { font-size: 14px; color: var(--text); flex: 1; font-weight: 400; }
+    .shop-qty { font-size: 12px; color: var(--text-3); margin-right: 4px; }
+    .shop-price { font-size: 13px; color: var(--text-2); font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+    .shop-price.last { font-size: 11px; color: var(--text-3); text-decoration: line-through; }
+    .shop-tag { font-size: 10px; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+    .shop-tag.auto { background: #E8F5E9; color: var(--primary); }
+    .shop-tag.urgent { background: #FFEBEE; color: #D94F4F; }
+    .shop-assignee { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #fff; font-family: 'Cormorant Garamond', serif; flex-shrink: 0; }
+
+    /* Smart Suggestion */
+    .suggestion-card { background: linear-gradient(135deg, rgba(45,90,74,0.06) 0%, rgba(45,90,74,0.02) 100%); border: 1px solid rgba(45,90,74,0.12); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+    .suggestion-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .suggestion-title { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .suggestion-title svg { width: 16px; height: 16px; }
+    .suggestion-text { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-bottom: 10px; }
+    .suggestion-items { display: flex; flex-wrap: wrap; gap: 6px; }
+    .suggestion-chip { padding: 4px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; font-size: 12px; color: var(--text-2); cursor: pointer; transition: all 0.2s; }
+    .suggestion-chip:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .suggestion-chip .prefix { color: var(--text-3); font-size: 10px; margin-right: 4px; }
+    .suggestion-chip:hover .prefix { color: rgba(255,255,255,0.7); }
+
+    /* Inventory Card */
+    .inv-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .inv-item:last-child { border-bottom: none; }
+    .inv-icon { font-size: 20px; }
+    .inv-info { flex: 1; }
+    .inv-name { font-size: 13px; color: var(--text); }
+    .inv-meta { font-size: 11px; color: var(--text-3); }
+    .inv-level { width: 60px; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .inv-level-fill { height: 100%; border-radius: 3px; }
+    .inv-level-fill.high { background: var(--primary); }
+    .inv-level-fill.med { background: var(--accent); }
+    .inv-level-fill.low { background: #D94F4F; }
+
+    /* Stats */
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-item { background: var(--surface-2); border-radius: var(--radius-sm); padding: 16px; text-align: center; }
+    .stat-val { font-size: 26px; font-weight: 700; font-family: 'Cormorant Garamond', serif; color: var(--text); }
+    .stat-val.danger { color: #D94F4F; }
+    .stat-lbl { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+    /* History */
+    .history-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: none; }
+    .history-name { font-size: 13px; color: var(--text); flex: 1; }
+    .history-date { font-size: 11px; color: var(--text-3); }
+    .history-price { font-size: 13px; color: var(--text-2); font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+
+    /* Add Bar */
+    .add-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+    .add-bar input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; font-family: 'Noto Sans SC', sans-serif; background: var(--surface-2); color: var(--text); outline: none; transition: all 0.2s; }
+    .add-bar input:focus { border-color: var(--primary); background: var(--surface); }
+    .add-bar input::placeholder { color: var(--text-3); }
+
+    /* Scan Button */
+    .scan-btn { width: 44px; height: 44px; background: var(--primary); border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+    .scan-btn:hover { background: var(--primary-light); transform: scale(1.05); }
+    .scan-btn svg { width: 20px; height: 20px; stroke: #fff; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .delay-1 { animation-delay: 0.08s; } .delay-2 { animation-delay: 0.16s; } .delay-3 { animation-delay: 0.24s; }
+    .delay-4 { animation-delay: 0.32s; } .delay-5 { animation-delay: 0.40s; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><h1>家的空间</h1><span>Family Hub</span></div>
+  <div class="sidebar-nav">
+    <div class="nav-section">概览</div>
+    <a class="nav-item" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>仪表盘</a>
+    <div class="nav-section">财务</div>
+    <a class="nav-item" href="finance-accounts.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>账户</a>
+    <a class="nav-item" href="finance-ledger.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>记账</a>
+    <a class="nav-item" href="finance-budget.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>预算</a>
+    <a class="nav-item" href="finance-report.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>报表</a>
+    <div class="nav-section">行程</div>
+    <a class="nav-item" href="calendar.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>日历</a>
+    <a class="nav-item" href="bulletin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>公告板</a>
+    <div class="nav-section">事务</div>
+    <a class="nav-item" href="tasks.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>事务清单</a>
+    <a class="nav-item active" href="shopping.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>购物清单</a>
+    <a class="nav-item" href="inventory.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>物资库存</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="family-avatar"><div class="avatar">李</div><div class="family-info"><div class="name">李明家</div><div class="role">家长 · 4人</div></div></div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">购物清单<small>本周采购 3次 · 节省预估 ¥42</small></div>
+    <div class="header-actions">
+      <button class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        采购历史
+      </button>
+      <button class="btn btn-accent">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        分享清单
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-row delay-1">
+    <div class="stat-item"><div class="stat-val">9</div><div class="stat-lbl">待采购</div></div>
+    <div class="stat-item"><div class="stat-val danger">3</div><div class="stat-lbl">库存不足</div></div>
+    <div class="stat-item"><div class="stat-val">5</div><div class="stat-lbl">本周已购</div></div>
+  </div>
+
+  <div class="shopping-layout">
+
+    <!-- Shopping List Main -->
+    <div>
+
+      <!-- Add Bar -->
+      <div class="card delay-1" style="padding:20px 24px; margin-bottom:20px;">
+        <div class="add-bar">
+          <input type="text" placeholder="添加商品名称...">
+          <input type="text" placeholder="数量（可选）" style="width:120px;">
+          <button class="btn btn-primary" style="flex-shrink:0;">+ 添加</button>
+          <button class="scan-btn" title="扫码添加">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Smart Suggestion -->
+      <div class="suggestion-card delay-1">
+        <div class="suggestion-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <div class="suggestion-title">🤖 智能补货建议</div>
+        </div>
+        <div class="suggestion-text">根据历史消耗记录，以下物资库存即将不足，建议近期采购：</div>
+        <div class="suggestion-items">
+          <div class="suggestion-chip"><span class="prefix">上次</span>大米 5kg</div>
+          <div class="suggestion-chip"><span class="prefix">上次</span>金龙鱼食用油 1.8L</div>
+          <div class="suggestion-chip"><span class="prefix">上次</span>卷纸 12卷装</div>
+          <div class="suggestion-chip"><span class="prefix">上次</span>洗发水 750ml</div>
+          <div class="suggestion-chip"><span class="prefix">低库存</span>鸡蛋</div>
+          <div class="suggestion-chip"><span class="prefix">低库存</span>鲜牛奶</div>
+        </div>
+      </div>
+
+      <!-- 生鲜 -->
+      <div class="card delay-2">
+        <div class="card-header">
+          <div class="shop-group-title"><span class="emoji">🥬</span> 生鲜果蔬</div>
+          <span class="shop-group-meta">王芳负责 · 周六采购</span>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check"></div>
+          <div class="shop-name">有机大米 5kg（十月稻田）</div>
+          <div class="shop-qty">×1袋</div>
+          <div class="shop-price last">¥42.80</div>
+          <div class="shop-price">¥38.90</div>
+          <span class="shop-tag auto">自动推荐</span>
+          <div class="shop-assignee" style="background:#E07B39;">王</div>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check"></div>
+          <div class="shop-name">土鸡蛋 30枚装</div>
+          <div class="shop-qty">×2盒</div>
+          <div class="shop-price">¥35.60</div>
+          <span class="shop-tag urgent">库存不足</span>
+          <div class="shop-assignee" style="background:#E07B39;">王</div>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check"></div>
+          <div class="shop-name">光明致优鲜牛奶 1.5L</div>
+          <div class="shop-qty">×2盒</div>
+          <div class="shop-price">¥26.00</div>
+          <span class="shop-tag urgent">库存不足</span>
+          <div class="shop-assignee" style="background:#E07B39;">王</div>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check done"></div>
+          <div class="shop-name">西兰花</div>
+          <div class="shop-qty">×2颗</div>
+          <div class="shop-price">¥12.00</div>
+          <div class="shop-assignee" style="background:#E07B39;">王</div>
+        </div>
+      </div>
+
+      <!-- 日用品 -->
+      <div class="card delay-3" style="margin-top:20px;">
+        <div class="card-header">
+          <div class="shop-group-title"><span class="emoji">🧴</span> 日用百货</div>
+          <span class="shop-group-meta">李明负责</span>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check"></div>
+          <div class="shop-name">维达抽纸 超韧系列 130抽×18包</div>
+          <div class="shop-qty">×1箱</div>
+          <div class="shop-price last">¥49.90</div>
+          <div class="shop-price">¥42.50</div>
+          <span class="shop-tag auto">自动推荐</span>
+          <div class="shop-assignee" style="background:#2D5A4A;">李</div>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check"></div>
+          <div class="shop-name">海飞丝去屑洗发水 750ml</div>
+          <div class="shop-qty">×1瓶</div>
+          <div class="shop-price last">¥79.00</div>
+          <div class="shop-price">¥65.00</div>
+          <span class="shop-tag auto">自动推荐</span>
+          <div class="shop-assignee" style="background:#2D5A4A;">李</div>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check"></div>
+          <div class="shop-name">厨房洗洁精 1.2kg</div>
+          <div class="shop-qty">×1瓶</div>
+          <div class="shop-price">¥14.50</div>
+          <div class="shop-assignee" style="background:#2D5A4A;">李</div>
+        </div>
+        <div class="shop-item">
+          <div class="shop-check done"></div>
+          <div class="shop-name">黑色垃圾袋 100只</div>
+          <div class="shop-qty">×1包</div>
+          <div class="shop-price">¥18.00</div>
+          <div class="shop-assignee" style="background:#2D5A4A;">李</div>
+        </div>
+      </div>
+
+      <!-- 已完成 -->
+      <div class="card delay-4" style="margin-top:20px;">
+        <div class="card-header">
+          <div class="shop-group-title"><span class="emoji">✅</span> 本周已采购</div>
+          <span class="shop-group-meta">5件商品 · 合计 ¥186.40</span>
+        </div>
+        <div class="history-item">
+          <span class="history-name" style="text-decoration:line-through; color:var(--text-3);">有机西兰花 ×2颗</span>
+          <span class="history-date">4月13日</span>
+          <span class="history-price">¥12.00</span>
+        </div>
+        <div class="history-item">
+          <span class="history-name" style="text-decoration:line-through; color:var(--text-3);">全麦面包 ×1袋</span>
+          <span class="history-date">4月13日</span>
+          <span class="history-price">¥9.80</span>
+        </div>
+        <div class="history-item">
+          <span class="history-name" style="text-decoration:line-through; color:var(--text-3);">农夫山泉 5L×4</span>
+          <span class="history-date">4月11日</span>
+          <span class="history-price">¥22.00</span>
+        </div>
+        <div class="history-item">
+          <span class="history-name" style="text-decoration:line-through; color:var(--text-3);">鸡蛋（已购）</span>
+          <span class="history-date">4月11日</span>
+          <span class="history-price">¥32.60</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="events-sidebar">
+
+      <!-- Inventory Quick View -->
+      <div class="card delay-2">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            库存预警
+          </div>
+          <a href="inventory.html" style="font-size:12px; color:var(--primary);">查看全部 →</a>
+        </div>
+        <div class="inv-item">
+          <div class="inv-icon">🥚</div>
+          <div class="inv-info">
+            <div class="inv-name">鸡蛋</div>
+            <div class="inv-meta">剩余约3天 · 平时每5天买一次</div>
+            <div class="inv-level"><div class="inv-level-fill low" style="width:20%;"></div></div>
+          </div>
+        </div>
+        <div class="inv-item">
+          <div class="inv-icon">🥛</div>
+          <div class="inv-info">
+            <div class="inv-name">鲜牛奶 1.5L</div>
+            <div class="inv-meta">剩余约1天</div>
+            <div class="inv-level"><div class="inv-level-fill low" style="width:10%;"></div></div>
+          </div>
+        </div>
+        <div class="inv-item">
+          <div class="inv-icon">🍚</div>
+          <div class="inv-info">
+            <div class="inv-name">大米 5kg</div>
+            <div class="inv-meta">剩余约7天</div>
+            <div class="inv-level"><div class="inv-level-fill med" style="width:40%;"></div></div>
+          </div>
+        </div>
+        <div class="inv-item">
+          <div class="inv-icon">🧻</div>
+          <div class="inv-info">
+            <div class="inv-name">卷纸</div>
+            <div class="inv-meta">剩余约14天</div>
+            <div class="inv-level"><div class="inv-level-fill high" style="width:70%;"></div></div>
+          </div>
+        </div>
+        <div class="inv-item">
+          <div class="inv-icon">🧴</div>
+          <div class="inv-info">
+            <div class="inv-name">洗发水</div>
+            <div class="inv-meta">剩余约20天</div>
+            <div class="inv-level"><div class="inv-level-fill high" style="width:60%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Last Purchase Prices -->
+      <div class="card delay-3">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>
+            上次购买价参考
+          </div>
+        </div>
+        <div class="history-item">
+          <div style="font-size:14px; flex:1;">有机大米 5kg</div>
+          <div style="font-size:12px; color:var(--text-3);">4月6日</div>
+          <div class="history-price">¥42.80</div>
+        </div>
+        <div class="history-item">
+          <div style="font-size:14px; flex:1;">卷纸 130抽×18包</div>
+          <div style="font-size:12px; color:var(--text-3);">3月28日</div>
+          <div class="history-price">¥49.90</div>
+        </div>
+        <div class="history-item">
+          <div style="font-size:14px; flex:1;">光明鲜奶 1.5L</div>
+          <div style="font-size:12px; color:var(--text-3);">4月11日</div>
+          <div class="history-price">¥26.00</div>
+        </div>
+        <div class="history-item">
+          <div style="font-size:14px; flex:1;">土鸡蛋 30枚</div>
+          <div style="font-size:12px; color:var(--text-3);">4月11日</div>
+          <div class="history-price">¥35.60</div>
+        </div>
+        <div class="history-item">
+          <div style="font-size:14px; flex:1;">海飞丝洗发水</div>
+          <div style="font-size:12px; color:var(--text-3);">3月15日</div>
+          <div class="history-price">¥79.00</div>
+        </div>
+      </div>
+
+      <!-- Delivery Estimates -->
+      <div class="card delay-4">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            建议采购时间
+          </div>
+        </div>
+        <div style="font-size:13px; color:var(--text-2); line-height:1.8;">
+          <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span>🥬 生鲜果蔬</span><span style="color:var(--text-3);">周六上午</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span>🧴 日用百货</span><span style="color:var(--text-3);">周三下班</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding:6px 0;">
+            <span>📦 电商大件</span><span style="color:var(--text-3);">下周一特卖</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+</body>
+</html>
