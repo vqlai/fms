@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Char(36)
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  avatarUrl    String?  @map("avatar_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  createdFamilies       Family[]
+  familyMembers         FamilyMember[]
+  expenses              Expense[]
+  schedules             Schedule[]
+  scheduleParticipants  ScheduleParticipant[]
+  createdTodos          Todo[]
+  todoAssignees         TodoAssignee[]
+  notifications         Notification[]
+  stockLogs             StockLog[]
+
+  @@map("users")
+}
+
+model Family {
+  id                  String   @id @default(uuid()) @db.Char(36)
+  name                String
+  inviteCode          String   @unique @map("invite_code")
+  createdById         String   @map("created_by_id") @db.Char(36)
+  inviteCodeExpiresAt DateTime @map("invite_code_expires_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  createdBy  User           @relation(fields: [createdById], references: [id])
+  members    FamilyMember[]
+  expenses   Expense[]
+  categories Category[]
+  budgets    Budget[]
+  schedules  Schedule[]
+  todos      Todo[]
+  inventoryItems InventoryItem[]
+  notifications  Notification[]
+
+  @@map("families")
+}
+
+enum FamilyRole {
+  creator
+  member
+  viewer
+}
+
+model FamilyMember {
+  id       String     @id @default(uuid()) @db.Char(36)
+  familyId String     @map("family_id") @db.Char(36)
+  userId   String     @map("user_id") @db.Char(36)
+  role     FamilyRole
+  joinedAt DateTime   @default(now()) @map("joined_at")
+
+  family Family @relation(fields: [familyId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([familyId, userId])
+  @@map("family_members")
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+model Category {
+  id        String       @id @default(uuid()) @db.Char(36)
+  familyId  String       @map("family_id") @db.Char(36)
+  name      String
+  type      CategoryType
+  icon      String       @default("💰")
+  color     String       @default("#6B7280")
+  sortOrder Int          @default(0) @map("sort_order")
+  isSystem  Boolean      @default(false) @map("is_system")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  family   Family    @relation(fields: [familyId], references: [id])
+  expenses Expense[]
+  budgets  Budget[]
+
+  @@index([familyId, type])
+  @@map("categories")
+}
+
+model Expense {
+  id              String       @id @default(uuid()) @db.Char(36)
+  familyId        String       @map("family_id") @db.Char(36)
+  userId          String       @map("user_id") @db.Char(36)
+  categoryId      String       @map("category_id") @db.Char(36)
+  amount          Decimal      @db.Decimal(12, 2)
+  type            CategoryType
+  transactionDate DateTime     @map("transaction_date") @db.Date
+  note            String?      @db.VarChar(500)
+  imageUrl        String?      @map("image_url")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
+
+  family    Family   @relation(fields: [familyId], references: [id])
+  createdBy User     @relation(fields: [userId], references: [id])
+  category  Category @relation(fields: [categoryId], references: [id])
+
+  @@index([familyId, transactionDate])
+  @@index([familyId, categoryId])
+  @@index([familyId, userId])
+  @@index([familyId, deletedAt])
+  @@map("expenses")
+}
+
+model Budget {
+  id         String   @id @default(uuid()) @db.Char(36)
+  familyId   String   @map("family_id") @db.Char(36)
+  categoryId String   @map("category_id") @db.Char(36)
+  amount     Decimal  @db.Decimal(12, 2)
+  period     String   @default("monthly")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  family   Family   @relation(fields: [familyId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([familyId, categoryId, period])
+  @@map("budgets")
+}
+
+model Schedule {
+  id          String    @id @default(uuid()) @db.Char(36)
+  familyId    String    @map("family_id") @db.Char(36)
+  createdById String    @map("created_by_id") @db.Char(36)
+  title       String
+  startTime   DateTime  @map("start_time")
+  endTime     DateTime? @map("end_time")
+  isAllDay    Boolean   @default(false) @map("is_all_day")
+  repeatRule  String?   @map("repeat_rule")
+  repeatDays  Json?     @map("repeat_days")
+  note        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  family       Family               @relation(fields: [familyId], references: [id])
+  createdBy    User                 @relation(fields: [createdById], references: [id])
+  participants ScheduleParticipant[]
+  reminders    ScheduleReminder[]
+
+  @@index([familyId, startTime])
+  @@map("schedules")
+}
+
+model ScheduleParticipant {
+  id         String @id @default(uuid()) @db.Char(36)
+  scheduleId String @map("schedule_id") @db.Char(36)
+  userId     String @map("user_id") @db.Char(36)
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([scheduleId, userId])
+  @@map("schedule_participants")
+}
+
+model ScheduleReminder {
+  id         String   @id @default(uuid()) @db.Char(36)
+  scheduleId String   @map("schedule_id") @db.Char(36)
+  remindAt   DateTime @map("remind_at")
+  isSent     Boolean  @default(false) @map("is_sent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id])
+
+  @@index([remindAt, isSent])
+  @@map("schedule_reminders")
+}
+
+model Todo {
+  id          String    @id @default(uuid()) @db.Char(36)
+  familyId    String    @map("family_id") @db.Char(36)
+  createdById String    @map("created_by_id") @db.Char(36)
+  title       String
+  description String?
+  priority    Int       @default(2)
+  dueDate     DateTime? @map("due_date") @db.Date
+  isCompleted Boolean   @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  family    Family         @relation(fields: [familyId], references: [id])
+  createdBy User           @relation(fields: [createdById], references: [id])
+  assignees TodoAssignee[]
+
+  @@index([familyId, dueDate])
+  @@index([familyId, isCompleted])
+  @@map("todos")
+}
+
+model TodoAssignee {
+  id     String @id @default(uuid()) @db.Char(36)
+  todoId String @map("todo_id") @db.Char(36)
+  userId String @map("user_id") @db.Char(36)
+
+  todo Todo @relation(fields: [todoId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([todoId, userId])
+  @@map("todo_assignees")
+}
+
+enum InventoryCategory {
+  fresh_food
+  dry_food
+  cleaning
+  medicine
+  personal_care
+  tools
+  other
+}
+
+model InventoryItem {
+  id          String            @id @default(uuid()) @db.Char(36)
+  familyId    String            @map("family_id") @db.Char(36)
+  name        String
+  category    InventoryCategory
+  quantity    Decimal           @db.Decimal(10, 2)
+  unit        String            @default("件")
+  location    String?
+  expiryDate  DateTime?         @map("expiry_date") @db.Date
+  minQuantity Decimal           @default(0) @map("min_quantity") @db.Decimal(10, 2)
+  note        String?
+  imageUrl    String?           @map("image_url")
+  barcode     String?
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  family Family     @relation(fields: [familyId], references: [id])
+  logs   StockLog[]
+
+  @@index([familyId, category])
+  @@index([familyId, expiryDate])
+  @@index([familyId, location])
+  @@map("inventory_items")
+}
+
+enum StockAction {
+  stock_in
+  stock_out
+  disposed
+}
+
+model StockLog {
+  id        String      @id @default(uuid()) @db.Char(36)
+  itemId    String      @map("item_id") @db.Char(36)
+  userId    String      @map("user_id") @db.Char(36)
+  action    StockAction
+  quantity  Decimal     @db.Decimal(10, 2)
+  price     Decimal?    @db.Decimal(12, 2)
+  note      String?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  item InventoryItem @relation(fields: [itemId], references: [id])
+  user User          @relation(fields: [userId], references: [id])
+
+  @@index([itemId, createdAt])
+  @@map("stock_logs")
+}
+
+enum NotificationType {
+  schedule_reminder
+  todo_reminder
+  budget_warning
+  family_invitation
+  member_join
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Char(36)
+  userId    String           @map("user_id") @db.Char(36)
+  familyId  String           @map("family_id") @db.Char(36)
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false) @map("is_read")
+  metadata  Json?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  family Family @relation(fields: [familyId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
