@@ -88,7 +88,21 @@ export class TodoService {
         })
       }
 
-      return this.findOne(todo.id, familyId)
+      return tx.todo.findUnique({
+        where: { id: todo.id },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, avatarUrl: true },
+          },
+          assignees: {
+            include: {
+              user: {
+                select: { id: true, name: true, avatarUrl: true },
+              },
+            },
+          },
+        },
+      })
     })
   }
 
@@ -134,7 +148,21 @@ export class TodoService {
         }
       }
 
-      return this.findOne(id, familyId)
+      return tx.todo.findUnique({
+        where: { id },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, avatarUrl: true },
+          },
+          assignees: {
+            include: {
+              user: {
+                select: { id: true, name: true, avatarUrl: true },
+              },
+            },
+          },
+        },
+      })
     })
   }
 

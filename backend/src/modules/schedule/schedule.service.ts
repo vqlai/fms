@@ -113,7 +113,22 @@ export class ScheduleService {
         })
       }
 
-      return this.findOne(schedule.id, familyId)
+      return tx.schedule.findUnique({
+        where: { id: schedule.id },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, avatarUrl: true },
+          },
+          participants: {
+            include: {
+              user: {
+                select: { id: true, name: true, avatarUrl: true },
+              },
+            },
+          },
+          reminders: true,
+        },
+      })
     })
   }
 
@@ -171,7 +186,22 @@ export class ScheduleService {
         }
       }
 
-      return this.findOne(id, familyId)
+      return tx.schedule.findUnique({
+        where: { id },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, avatarUrl: true },
+          },
+          participants: {
+            include: {
+              user: {
+                select: { id: true, name: true, avatarUrl: true },
+              },
+            },
+          },
+          reminders: true,
+        },
+      })
     })
   }
 

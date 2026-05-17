@@ -18,22 +18,26 @@ import { Roles } from '../common/decorators/roles.decorator'
 
 @ApiTags('财务管理')
 @Controller('expenses')
+@UseGuards(FamilyRoleGuard)
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Get()
+  @Roles('creator', 'member', 'viewer')
   @ApiOperation({ summary: '获取收支列表（支持分页、筛选）' })
   async findAll(@CurrentFamily() familyId: string, @Query() query: QueryExpenseDto) {
     return this.expenseService.findAll(familyId, query)
   }
 
   @Get('report')
+  @Roles('creator', 'member', 'viewer')
   @ApiOperation({ summary: '获取统计报表' })
   async getReport(@CurrentFamily() familyId: string, @Query() query: QueryReportDto) {
     return this.expenseService.getReport(familyId, query)
   }
 
   @Get('categories')
+  @Roles('creator', 'member', 'viewer')
   @ApiOperation({ summary: '获取收支分类列表' })
   async getCategories(@CurrentFamily() familyId: string) {
     return this.expenseService.getCategories(familyId)
@@ -68,6 +72,7 @@ export class ExpenseController {
   }
 
   @Get('budgets')
+  @Roles('creator', 'member', 'viewer')
   @ApiOperation({ summary: '获取预算列表' })
   async getBudgets(@CurrentFamily() familyId: string) {
     return this.expenseService.getBudgets(familyId)
@@ -102,12 +107,14 @@ export class ExpenseController {
   }
 
   @Get(':id')
+  @Roles('creator', 'member', 'viewer')
   @ApiOperation({ summary: '获取单条收支记录' })
   async findOne(@CurrentFamily() familyId: string, @Param('id') id: string) {
     return this.expenseService.findOne(id, familyId)
   }
 
   @Post()
+  @Roles('creator', 'member')
   @ApiOperation({ summary: '新增收支记录' })
   async create(
     @CurrentFamily() familyId: string,
@@ -118,6 +125,7 @@ export class ExpenseController {
   }
 
   @Patch(':id')
+  @Roles('creator', 'member')
   @ApiOperation({ summary: '更新收支记录' })
   async update(
     @CurrentFamily() familyId: string,
@@ -128,6 +136,7 @@ export class ExpenseController {
   }
 
   @Delete(':id')
+  @Roles('creator', 'member')
   @ApiOperation({ summary: '删除收支记录（软删除）' })
   async remove(@CurrentFamily() familyId: string, @Param('id') id: string) {
     return this.expenseService.softDelete(id, familyId)
