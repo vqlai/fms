@@ -94,12 +94,12 @@ async function handleDelete(id: string) {
         <div class="h-3 overflow-hidden rounded-full bg-gray-100">
           <div
             class="h-full rounded-full transition-all duration-300"
-            :class="budget.spent / budget.amount >= 1 ? 'bg-danger-500' : budget.spent / budget.amount >= 0.8 ? 'bg-warning-500' : 'bg-primary-500'"
-            :style="{ width: `${Math.min(budget.spent / budget.amount * 100, 100)}%` }"
+            :class="budget.amount > 0 && budget.spent / budget.amount > 1 ? 'bg-danger-500' : budget.amount > 0 && budget.spent / budget.amount >= 0.8 ? 'bg-warning-500' : 'bg-primary-500'"
+            :style="{ width: `${budget.amount > 0 ? Math.min((budget.spent / budget.amount) * 100, 100) : 0}%` }"
           />
         </div>
         <div class="mt-2 flex justify-between text-xs text-muted">
-          <span>{{ Math.round(budget.spent / budget.amount * 100) }}%</span>
+          <span>{{ budget.amount > 0 ? Math.round((budget.spent / budget.amount) * 100) : 0 }}%</span>
           <span :class="budget.spent > budget.amount ? 'text-danger-500 font-medium' : ''">
             {{ budget.spent > budget.amount ? '已超支' : `剩余 ${formatCurrency(budget.amount - budget.spent)}` }}
           </span>

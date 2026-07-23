@@ -42,11 +42,12 @@ export class AuthService {
       },
     })
 
-    return this.generateTokens({
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-    })
+    const families = await this.getUserFamilies(user.id)
+
+    return this.generateTokens(
+      { sub: user.id, email: user.email, name: user.name },
+      families,
+    )
   }
 
   async login(dto: LoginDto) {
@@ -64,14 +65,34 @@ export class AuthService {
       throw new UnauthorizedException('邮箱或密码错误')
     }
 
-    return this.generateTokens({
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-    })
+    const families = await this.getUserFamilies(user.id)
+
+    return this.generateTokens(
+      { sub: user.id, email: user.email, name: user.name },
+      families,
+    )
   }
 
-  private generateTokens(payload: { sub: string; email: string; name: string }) {
+  private async getUserFamilies(userId: string) {
+    const memberships = await this.prisma.familyMember.findMany({
+      where: { userId },
+      include: { family: true },
+    })
+    return memberships.map((m) => ({
+      id: m.family.id,
+      name: m.family.name,
+      inviteCode: m.family.inviteCode,
+      inviteCodeExpiresAt: m.family.inviteCodeExpiresAt,
+      createdAt: m.family.createdAt,
+      updatedAt: m.family.updatedAt,
+      role: m.role,
+    }))
+  }
+
+  private generateTokens(
+    payload: { sub: string; email: string; name: string },
+    families: { id: string; name: string; role: string }[] = [],
+  ) {
     const accessToken = this.jwtService.sign(payload)
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -86,6 +107,7 @@ export class AuthService {
         email: payload.email,
         name: payload.name,
       },
+      families,
     }
   }
 

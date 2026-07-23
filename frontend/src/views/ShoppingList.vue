@@ -9,7 +9,7 @@ const { items, isLoading, fetchItems } = useInventory()
 const shoppingItems = ref<Array<{ id: string; name: string; quantity: number; unit: string; checked: boolean; itemId: string }>>([])
 
 onMounted(async () => {
-  await fetchItems({ lowStock: true } as Record<string, unknown> & { page?: number })
+  await fetchItems({ page: 1, pageSize: 100 })
   updateShoppingList()
 })
 

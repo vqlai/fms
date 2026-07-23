@@ -23,10 +23,10 @@ export class FamilyRoleGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest()
     const userId = request.user?.sub
-    const familyId = request.user?.familyId
+    const familyId = request.user?.familyId ?? request.headers['x-family-id']
 
     if (!userId || !familyId) {
-      throw new ForbiddenException('无法验证家庭成员身份')
+      throw new ForbiddenException('无法验证家庭成员身份，请先创建或加入家庭组')
     }
 
     const membership = await this.prisma.familyMember.findUnique({

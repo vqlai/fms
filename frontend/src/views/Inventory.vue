@@ -45,7 +45,7 @@ onMounted(() => loadItems())
 
 async function loadItems() {
   const params: Record<string, unknown> = { page: 1, pageSize: 50 }
-  if (searchQuery.value) params.search = searchQuery.value
+  if (searchQuery.value) params.keyword = searchQuery.value
   if (categoryFilter.value) params.category = categoryFilter.value
   await fetchItems(params as Record<string, string | number | boolean> & { page?: number })
 }

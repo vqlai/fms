@@ -42,9 +42,7 @@ export interface StockInOutDto {
 export interface QueryInventoryDto {
   page?: number
   pageSize?: number
-  search?: string
+  keyword?: string
   category?: string
   location?: string
-  expiring?: boolean
-  lowStock?: boolean
 }

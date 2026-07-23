@@ -27,9 +27,16 @@ export const useAuthStore = defineStore('auth', () => {
   function onAuthSuccess(payload: AuthSuccessPayload) {
     token.value = payload.accessToken
     user.value = payload.user
-    families.value = payload.families
+    families.value = payload.families ?? []
     localStorage.setItem(TOKEN_KEY, payload.accessToken)
     localStorage.setItem(REFRESH_TOKEN_KEY, payload.refreshToken)
+
+    // 登录/注册后自动设置当前家庭组
+    const storedFamilyId = localStorage.getItem(CURRENT_FAMILY_KEY)
+    const hasStoredFamily = storedFamilyId && families.value.some((f) => f.id === storedFamilyId)
+    if (!hasStoredFamily && families.value.length > 0) {
+      localStorage.setItem(CURRENT_FAMILY_KEY, families.value[0].id)
+    }
   }
 
   async function login(credentials: { email: string; password: string }) {
@@ -49,6 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(CURRENT_FAMILY_KEY)
+    window.location.href = '/auth/login'
   }
 
   async function fetchProfile() {
@@ -56,5 +64,11 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = response.data
   }
 
-  return { user, token, families, isAuthenticated, login, register, logout, fetchProfile }
+  async function updateProfile(data: { name?: string; avatarUrl?: string }) {
+    const response = await authApi.updateProfile(data)
+    user.value = { ...user.value, ...response.data }
+    return response.data
+  }
+
+  return { user, token, families, isAuthenticated, login, register, logout, fetchProfile, updateProfile }
 })

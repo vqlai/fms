@@ -137,8 +137,12 @@ export class ExpenseController {
 
   @Delete(':id')
   @Roles('creator', 'member')
-  @ApiOperation({ summary: '删除收支记录（软删除）' })
-  async remove(@CurrentFamily() familyId: string, @Param('id') id: string) {
-    return this.expenseService.softDelete(id, familyId)
+  @ApiOperation({ summary: '删除收支记录（软删除，成员仅删自己的）' })
+  async remove(
+    @CurrentFamily() familyId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.expenseService.softDelete(id, familyId, userId)
   }
 }

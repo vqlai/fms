@@ -51,12 +51,14 @@ const sidebarClass = computed(() =>
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
+        :data-nav="item.path"
+        :aria-label="item.name"
         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
         :class="isActive(item.path)
           ? 'bg-primary-50 text-primary-700'
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
       >
-        <span class="text-lg">{{ item.icon }}</span>
+        <span class="text-lg" aria-hidden="true">{{ item.icon }}</span>
         <span v-if="!uiStore.sidebarCollapsed">{{ item.name }}</span>
       </router-link>
     </nav>

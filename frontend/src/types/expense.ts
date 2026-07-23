@@ -62,11 +62,16 @@ export interface Budget {
   id: string
   familyId: string
   categoryId: string
-  category: Category
+  category: {
+    id: string
+    name: string
+    icon: string | null
+    color: string | null
+  }
   amount: number
   spent: number
+  period: string
   createdAt: string
-  updatedAt: string
 }
 
 export interface CreateBudgetDto {
@@ -83,22 +88,19 @@ export interface ExpenseReport {
     totalIncome: number
     totalExpense: number
     balance: number
+    startDate?: string
+    endDate?: string
   }
   categoryBreakdown: Array<{
-    categoryId: string
-    categoryName: string
+    name: string
+    icon: string | null
+    color: string | null
     amount: number
-    percentage: number
+    count: number
   }>
   memberBreakdown: Array<{
-    userId: string
-    userName: string
+    name: string
     amount: number
-    percentage: number
-  }>
-  monthlyTrends: Array<{
-    month: string
-    income: number
-    expense: number
+    count: number
   }>
 }

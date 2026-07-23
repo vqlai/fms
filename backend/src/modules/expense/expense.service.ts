@@ -171,7 +171,7 @@ export class ExpenseService {
     })
   }
 
-  async softDelete(id: string, familyId: string) {
+  async softDelete(id: string, familyId: string, userId: string) {
     const expense = await this.prisma.expense.findUnique({ where: { id } })
 
     if (!expense || expense.deletedAt) {
@@ -180,6 +180,18 @@ export class ExpenseService {
 
     if (expense.familyId !== familyId) {
       throw new ForbiddenException('无权删除该记录')
+    }
+
+    const membership = await this.prisma.familyMember.findUnique({
+      where: { familyId_userId: { familyId, userId } },
+    })
+
+    if (!membership) {
+      throw new ForbiddenException('您不属于该家庭组')
+    }
+
+    if (membership.role === 'member' && expense.userId !== userId) {
+      throw new ForbiddenException('成员只能删除自己的收支记录')
     }
 
     return this.prisma.expense.update({
@@ -249,7 +261,7 @@ export class ExpenseService {
   }
 
   async getBudgets(familyId: string) {
-    return this.prisma.budget.findMany({
+    const budgets = await this.prisma.budget.findMany({
       where: { familyId },
       include: {
         category: {
@@ -257,6 +269,33 @@ export class ExpenseService {
         },
       },
     })
+
+    if (budgets.length === 0) return []
+
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        familyId,
+        type: 'expense',
+        deletedAt: null,
+        transactionDate: { gte: monthStart, lte: monthEnd },
+      },
+      select: { categoryId: true, amount: true },
+    })
+
+    const spentMap = new Map<string, number>()
+    for (const e of expenses) {
+      spentMap.set(e.categoryId, (spentMap.get(e.categoryId) ?? 0) + Number(e.amount))
+    }
+
+    return budgets.map((b) => ({
+      ...b,
+      amount: Number(b.amount),
+      spent: Math.round((spentMap.get(b.categoryId) ?? 0) * 100) / 100,
+    }))
   }
 
   async setBudget(familyId: string, dto: CreateBudgetDto) {

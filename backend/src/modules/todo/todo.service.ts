@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { PrismaService } from '../common/prisma/prisma.service'
-import { CreateTodoDto, UpdateTodoDto, QueryTodoDto } from '../schedule/dto/schedule.dto'
+import { CreateTodoDto, UpdateTodoDto, QueryTodoDto } from './dto/todo.dto'
 import { Prisma } from '@prisma/client'
 
 @Injectable()

@@ -10,7 +10,7 @@ import {
   UpdateInventoryDto,
   StockInOutDto,
   QueryInventoryDto,
-} from '../schedule/dto/schedule.dto'
+} from './dto/inventory.dto'
 import { Prisma, InventoryCategory } from '@prisma/client'
 
 @Injectable()

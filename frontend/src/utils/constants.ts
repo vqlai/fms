@@ -39,13 +39,13 @@ export const PRESET_INCOME_CATEGORIES = [
 ]
 
 export const INVENTORY_CATEGORIES = [
-  '食材生鲜',
-  '调料干货',
-  '清洁用品',
-  '药品保健',
-  '个护美妆',
-  '工具杂项',
-  '其他',
+  { value: 'fresh_food', label: '食材生鲜', icon: '🥬' },
+  { value: 'dry_food', label: '调料干货', icon: '🧂' },
+  { value: 'cleaning', label: '清洁用品', icon: '🧹' },
+  { value: 'medicine', label: '药品保健', icon: '💊' },
+  { value: 'personal_care', label: '个护美妆', icon: '🧴' },
+  { value: 'tools', label: '工具杂项', icon: '🔧' },
+  { value: 'other', label: '其他', icon: '📦' },
 ] as const
 
 export const ERROR_MESSAGES: Record<number, string> = {

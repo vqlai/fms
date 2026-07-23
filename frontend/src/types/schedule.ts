@@ -30,8 +30,8 @@ export interface ScheduleParticipant {
 
 export interface ScheduleReminder {
   id: string
-  minutes: number
-  notified: boolean
+  remindAt: string
+  isSent: boolean
 }
 
 export interface CreateScheduleDto {

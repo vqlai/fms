@@ -7,10 +7,6 @@ export const inventoryApi = {
     return http.get<ApiResponse<InventoryItem[]>>('/inventory', { params })
   },
 
-  getStockAlerts() {
-    return http.get<ApiResponse<InventoryItem[]>>('/inventory/alerts')
-  },
-
   create(data: CreateInventoryDto) {
     return http.post<ApiResponse<InventoryItem>>('/inventory', data)
   },

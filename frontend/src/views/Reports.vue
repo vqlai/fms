@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useExpense } from '@/composables/useExpense'
 import { formatCurrency } from '@/utils/format'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -31,6 +31,24 @@ function changePeriod(val: string) {
   }
   fetchReport({ startDate: start })
 }
+
+const totalExpense = computed(() => report.value?.summary.totalExpense ?? 0)
+
+const categoryWithPercent = computed(() => {
+  const list = report.value?.categoryBreakdown ?? []
+  return list.map((item) => ({
+    ...item,
+    percentage: totalExpense.value > 0 ? (item.amount / totalExpense.value) * 100 : 0,
+  }))
+})
+
+const memberWithPercent = computed(() => {
+  const list = report.value?.memberBreakdown ?? []
+  return list.map((item) => ({
+    ...item,
+    percentage: totalExpense.value > 0 ? (item.amount / totalExpense.value) * 100 : 0,
+  }))
+})
 </script>
 
 <template>
@@ -72,8 +90,8 @@ function changePeriod(val: string) {
         <div class="rounded-xl bg-card p-6 shadow-sm">
           <h3 class="mb-4 font-medium text-gray-900">支出分类占比</h3>
           <div class="space-y-2">
-            <div v-for="item in report.categoryBreakdown" :key="item.categoryId" class="flex items-center gap-3">
-              <span class="w-20 truncate text-sm text-gray-700">{{ item.categoryName }}</span>
+            <div v-for="(item, idx) in categoryWithPercent" :key="idx" class="flex items-center gap-3">
+              <span class="w-20 truncate text-sm text-gray-700">{{ item.icon }} {{ item.name }}</span>
               <div class="flex-1 h-3 overflow-hidden rounded-full bg-gray-100">
                 <div class="h-full rounded-full bg-primary-500" :style="{ width: `${item.percentage}%` }" />
               </div>
@@ -84,37 +102,14 @@ function changePeriod(val: string) {
         <div class="rounded-xl bg-card p-6 shadow-sm">
           <h3 class="mb-4 font-medium text-gray-900">成员支出占比</h3>
           <div class="space-y-2">
-            <div v-for="item in report.memberBreakdown" :key="item.userId" class="flex items-center gap-3">
-              <span class="w-20 truncate text-sm text-gray-700">{{ item.userName }}</span>
+            <div v-for="(item, idx) in memberWithPercent" :key="idx" class="flex items-center gap-3">
+              <span class="w-20 truncate text-sm text-gray-700">{{ item.name }}</span>
               <div class="flex-1 h-3 overflow-hidden rounded-full bg-gray-100">
                 <div class="h-full rounded-full bg-warning-500" :style="{ width: `${item.percentage}%` }" />
               </div>
               <span class="w-24 text-right text-sm text-muted">{{ formatCurrency(item.amount) }} ({{ Math.round(item.percentage) }}%)</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="rounded-xl bg-card p-6 shadow-sm">
-        <h3 class="mb-4 font-medium text-gray-900">月度趋势</h3>
-        <div class="flex items-end gap-4 h-48">
-          <div v-for="item in report.monthlyTrends" :key="item.month" class="flex flex-1 flex-col items-center gap-1">
-            <div class="flex w-full flex-col items-center gap-0.5">
-              <div
-                class="w-full max-w-[40px] rounded-t bg-success-400 transition-all"
-                :style="{ height: `${Math.max(item.income / (Math.max(report.monthlyTrends[0]?.income || 1, 1)) * 100, 2)}%` }"
-              />
-              <div
-                class="w-full max-w-[40px] rounded-t bg-danger-400 transition-all"
-                :style="{ height: `${Math.max(item.expense / (Math.max(report.monthlyTrends[0]?.expense || 1, 1)) * 100, 2)}%` }"
-              />
-            </div>
-            <span class="text-xs text-muted">{{ item.month.slice(5) }}月</span>
-          </div>
-        </div>
-        <div class="mt-4 flex items-center justify-center gap-6 text-sm">
-          <span class="flex items-center gap-1"><span class="h-3 w-3 rounded bg-success-400 inline-block" /> 收入</span>
-          <span class="flex items-center gap-1"><span class="h-3 w-3 rounded bg-danger-400 inline-block" /> 支出</span>
         </div>
       </div>
     </template>

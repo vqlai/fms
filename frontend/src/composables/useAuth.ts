@@ -13,5 +13,6 @@ export function useAuth() {
     register: authStore.register,
     logout: authStore.logout,
     fetchProfile: authStore.fetchProfile,
+    updateProfile: authStore.updateProfile,
   }
 }

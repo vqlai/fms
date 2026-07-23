@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useNotification } from '@/composables/useNotification'
 
-const { user, fetchProfile } = useAuth()
+const { user, fetchProfile, updateProfile } = useAuth()
 const { showToast } = useNotification()
 
 const name = ref('')
@@ -18,7 +18,7 @@ async function handleSave() {
   if (!name.value.trim()) return
   isSaving.value = true
   try {
-    await fetchProfile()
+    await updateProfile({ name: name.value.trim() })
     showToast('success', '保存成功')
   } catch {
     showToast('error', '保存失败')

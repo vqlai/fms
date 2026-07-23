@@ -117,6 +117,14 @@ export class FamilyService {
       throw new BadRequestException('您已加入该家庭组')
     }
 
+    const otherMemberships = await this.prisma.familyMember.count({
+      where: { userId, familyId: { not: family.id } },
+    })
+
+    if (otherMemberships > 0) {
+      throw new BadRequestException('您已加入其他家庭组，请先退出后再加入')
+    }
+
     await this.prisma.familyMember.create({
       data: {
         familyId: family.id,

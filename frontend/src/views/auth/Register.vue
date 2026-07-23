@@ -21,7 +21,8 @@ const { value: confirmPassword, errorMessage: confirmPasswordError } = useField<
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    await register(values as { name: string; email: string; password: string })
+    const { confirmPassword, ...registerData } = values
+    await register(registerData as { name: string; email: string; password: string })
     showToast('success', '注册成功')
     router.push('/')
   } catch {

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { TodoService } from './todo.service'
-import { CreateTodoDto, UpdateTodoDto, QueryTodoDto } from '../schedule/dto/schedule.dto'
+import { CreateTodoDto, UpdateTodoDto, QueryTodoDto } from './dto/todo.dto'
 import { CurrentUser } from '../common/decorators/current-user.decorator'
 import { CurrentFamily } from '../common/decorators/current-family.decorator'
 import { FamilyRoleGuard } from '../common/guards/family-role.guard'

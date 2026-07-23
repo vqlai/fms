@@ -7,7 +7,7 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import Skeleton from '@/components/common/Skeleton.vue'
 import type { ExpenseType, QueryExpenseDto, CreateExpenseDto } from '@/types/expense'
 
-const { expenses, categories, isLoading, error, fetchExpenses, fetchCategories, createExpense, updateExpense, deleteExpense } = useExpense()
+const { expenses, categories, pagination, isLoading, error, fetchExpenses, fetchCategories, createExpense, updateExpense, deleteExpense } = useExpense()
 const { showToast } = useNotification()
 
 const showForm = ref(false)
@@ -83,6 +83,7 @@ async function handleDelete() {
     await fetchExpenses(filter.value)
   } catch {
     showToast('error', '删除失败')
+    showDeleteConfirm.value = false
   }
 }
 
@@ -101,10 +102,21 @@ function clearFilter() {
   fetchExpenses(filter.value)
 }
 
+function goToPage(page: number) {
+  if (page < 1 || page > pagination.value.totalPages || page === pagination.value.page) return
+  filter.value.page = page
+  fetchExpenses(filter.value)
+}
+
 const filteredCategories = computed(() => {
   if (!typeFilter.value) return categories.value ?? []
   return (categories.value ?? []).filter((c) => c.type === typeFilter.value)
 })
+
+function onTypeChange() {
+  categoryFilter.value = ''
+  applyFilter()
+}
 
 onMounted(() => {
   fetchCategories()
@@ -126,14 +138,14 @@ onMounted(() => {
 
     <!-- filters -->
     <div class="flex flex-wrap items-center gap-3 rounded-lg bg-card p-3 shadow-sm">
-      <select v-model="typeFilter" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" @change="applyFilter">
+      <select v-model="typeFilter" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" @change="onTypeChange">
         <option value="">全部类型</option>
         <option value="expense">支出</option>
         <option value="income">收入</option>
       </select>
       <select v-model="categoryFilter" class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" @change="applyFilter">
         <option value="">全部分类</option>
-        <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.icon }} {{ cat.name }}</option>
+        <option v-for="cat in filteredCategories" :key="cat.id" :value="cat.id">{{ cat.icon }} {{ cat.name }}</option>
       </select>
       <button class="text-sm text-muted hover:text-gray-700" @click="clearFilter">清除筛选</button>
     </div>
@@ -197,6 +209,25 @@ onMounted(() => {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- pagination -->
+    <div v-if="pagination.totalPages > 1" class="flex items-center justify-center gap-2 pt-2">
+      <button
+        class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+        :disabled="pagination.page <= 1"
+        @click="goToPage(pagination.page - 1)"
+      >
+        上一页
+      </button>
+      <span class="text-sm text-muted">{{ pagination.page }} / {{ pagination.totalPages }}（共 {{ pagination.total }} 条）</span>
+      <button
+        class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+        :disabled="pagination.page >= pagination.totalPages"
+        @click="goToPage(pagination.page + 1)"
+      >
+        下一页
+      </button>
     </div>
 
     <!-- expense form drawer -->

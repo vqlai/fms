@@ -14,8 +14,15 @@ export const useFamilyStore = defineStore('family', () => {
   async function fetchFamilies() {
     const response = await familyApi.getList()
     families.value = response.data
-    if (!currentFamily.value && response.data.length > 0) {
-      setCurrentFamily(response.data[0])
+    if (response.data.length > 0) {
+      const storedId = localStorage.getItem(CURRENT_FAMILY_KEY)
+      const hasValid = storedId && response.data.some((f) => f.id === storedId)
+      if (!hasValid) {
+        setCurrentFamily(response.data[0])
+      } else if (!currentFamily.value) {
+        const found = response.data.find((f) => f.id === storedId)
+        if (found) setCurrentFamily(found)
+      }
     }
   }
 

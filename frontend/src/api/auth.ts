@@ -24,6 +24,14 @@ interface AuthResult {
   families: Family[]
 }
 
+interface UserProfile {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  avatarUrl: string | null
+}
+
 export const authApi = {
   login(data: LoginDto) {
     return http.post<ApiResponse<AuthResult>>('/auth/login', data)
@@ -38,10 +46,10 @@ export const authApi = {
   },
 
   getProfile() {
-    return http.get<ApiResponse<{ id: string; name: string; email: string; avatar: string | null }>>('/user/profile')
+    return http.get<ApiResponse<UserProfile>>('/user/profile')
   },
 
-  updateProfile(data: { name?: string; avatar?: string }) {
-    return http.patch<ApiResponse<{ id: string; name: string; email: string; avatar: string | null }>>('/user/profile', data)
+  updateProfile(data: { name?: string; avatarUrl?: string }) {
+    return http.patch<ApiResponse<UserProfile>>('/user/profile', data)
   },
 }

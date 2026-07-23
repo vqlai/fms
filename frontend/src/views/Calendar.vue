@@ -31,8 +31,9 @@ onMounted(async () => {
 
 async function loadMonth() {
   const [year, month] = currentMonth.value.split('-')
+  const lastDay = new Date(+year, +month, 0).getDate()
   const startDate = `${year}-${month}-01`
-  const endDate = `${year}-${month}-${new Date(+year, +month, 0).getDate()}`
+  const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`
   await fetchSchedules({ startDate, endDate })
 }
 
@@ -67,6 +68,7 @@ function openCreateForm(day?: string) {
 
 function openEditForm(schedule: typeof schedules.value[0]) {
   editingId.value = schedule.id
+  const start = new Date(schedule.startTime)
   form.value = {
     title: schedule.title,
     startTime: schedule.startTime.slice(0, 16),
@@ -74,7 +76,10 @@ function openEditForm(schedule: typeof schedules.value[0]) {
     isAllDay: schedule.isAllDay,
     note: schedule.note ?? '',
     participantIds: schedule.participants.map((p) => p.userId),
-    reminderMinutes: schedule.reminders.map((r) => r.minutes),
+    reminderMinutes: schedule.reminders.map((r) => {
+      const diff = start.getTime() - new Date(r.remindAt).getTime()
+      return Math.round(diff / 60000)
+    }),
   }
   showForm.value = true
 }
