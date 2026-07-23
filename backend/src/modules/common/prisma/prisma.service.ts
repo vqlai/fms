@@ -25,9 +25,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         return
       } catch (error) {
         this.retryCount++
-        this.logger.error(
-          `数据库连接失败（第 ${this.retryCount}/${this.maxRetries} 次）: ${error}`,
-        )
+        this.logger.error(`数据库连接失败（第 ${this.retryCount}/${this.maxRetries} 次）: ${error}`)
         if (this.retryCount >= this.maxRetries) {
           throw error
         }

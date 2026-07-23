@@ -44,10 +44,7 @@ export class AuthService {
 
     const families = await this.getUserFamilies(user.id)
 
-    return this.generateTokens(
-      { sub: user.id, email: user.email, name: user.name },
-      families,
-    )
+    return this.generateTokens({ sub: user.id, email: user.email, name: user.name }, families)
   }
 
   async login(dto: LoginDto) {
@@ -67,10 +64,7 @@ export class AuthService {
 
     const families = await this.getUserFamilies(user.id)
 
-    return this.generateTokens(
-      { sub: user.id, email: user.email, name: user.name },
-      families,
-    )
+    return this.generateTokens({ sub: user.id, email: user.email, name: user.name }, families)
   }
 
   private async getUserFamilies(userId: string) {
